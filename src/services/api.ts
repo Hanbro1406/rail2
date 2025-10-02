@@ -20,8 +20,18 @@ const mockTrains: Train[] = [
     destination_station_id: 2,
     total_seats: 200,
     available_seats: 45,
+    waiting_list: 12,
     source_station: mockStations[0],
     destination_station: mockStations[1],
+    departure_time: '08:00',
+    arrival_time: '20:30',
+    duration: '12h 30m',
+    train_type: 'Superfast',
+    stops: [
+      { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS', arrival_time: '08:00', departure_time: '08:00', platform: '1' },
+      { station_id: 9, station_name: 'Kanpur Central', station_code: 'CNB', arrival_time: '14:15', departure_time: '14:20', platform: '3', halt_duration: '5m' },
+      { station_id: 2, station_name: 'Mumbai Central', station_code: 'MMCT', arrival_time: '20:30', departure_time: '20:30', platform: '2' },
+    ],
   },
   {
     train_id: 2,
@@ -30,8 +40,18 @@ const mockTrains: Train[] = [
     destination_station_id: 3,
     total_seats: 150,
     available_seats: 82,
+    waiting_list: 5,
     source_station: mockStations[0],
     destination_station: mockStations[2],
+    departure_time: '06:00',
+    arrival_time: '14:45',
+    duration: '8h 45m',
+    train_type: 'Express',
+    stops: [
+      { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS', arrival_time: '06:00', departure_time: '06:00', platform: '4' },
+      { station_id: 10, station_name: 'Agra Cantt', station_code: 'AGC', arrival_time: '08:30', departure_time: '08:35', platform: '2', halt_duration: '5m' },
+      { station_id: 3, station_name: 'Chennai Central', station_code: 'MAS', arrival_time: '14:45', departure_time: '14:45', platform: '1' },
+    ],
   },
   {
     train_id: 3,
@@ -40,8 +60,17 @@ const mockTrains: Train[] = [
     destination_station_id: 4,
     total_seats: 180,
     available_seats: 23,
+    waiting_list: 45,
     source_station: mockStations[1],
     destination_station: mockStations[3],
+    departure_time: '22:15',
+    arrival_time: '08:30',
+    duration: '10h 15m',
+    train_type: 'Non-stop',
+    stops: [
+      { station_id: 2, station_name: 'Mumbai Central', station_code: 'MMCT', arrival_time: '22:15', departure_time: '22:15', platform: '5' },
+      { station_id: 4, station_name: 'Kolkata', station_code: 'KOAA', arrival_time: '08:30', departure_time: '08:30', platform: '3' },
+    ],
   },
 ];
 
@@ -55,6 +84,8 @@ let mockBookings: Booking[] = [
     travel_date: '2025-01-25',
     status: 'CONFIRMED',
     train: mockTrains[0],
+    total_amount: 1700,
+    booking_class: 'AC 3-Tier',
     passengers: [
       { passenger_id: 1, passenger_name: 'John Doe', age: 30, gender: 'Male', seat_number: 1 },
       { passenger_id: 2, passenger_name: 'Jane Doe', age: 28, gender: 'Female', seat_number: 2 },
@@ -104,10 +135,22 @@ export const api = {
     });
   },
 
+  // Get train details
+  async getTrainDetails(trainId: number): Promise<Train | null> {
+    await delay(500);
+    return mockTrains.find(train => train.train_id === trainId) || null;
+  },
+
   // Booking
   async bookTicket(bookingData: BookingRequest): Promise<{ message: string; pnr_number: string }> {
     await delay(1500);
     const pnr = 'PNR' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    
+    // Determine booking status based on availability
+    const train = mockTrains.find(t => t.train_id === bookingData.train_id);
+    const status = train && train.available_seats && train.available_seats >= bookingData.passengers.length 
+      ? 'CONFIRMED' 
+      : 'WAITING';
     
     // Add to mock bookings
     const newBooking: Booking = {
@@ -117,8 +160,10 @@ export const api = {
       train_id: bookingData.train_id,
       booking_date: new Date().toISOString().split('T')[0],
       travel_date: bookingData.travel_date,
-      status: 'CONFIRMED',
-      train: mockTrains.find(t => t.train_id === bookingData.train_id),
+      status: status,
+      train: train,
+      total_amount: bookingData.passengers.length * 850,
+      booking_class: bookingData.booking_class || 'Sleeper',
       passengers: bookingData.passengers.map((p, index) => ({
         ...p,
         passenger_id: index + 1,

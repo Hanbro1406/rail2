@@ -22,6 +22,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [passengers, setPassengers] = useState<Passenger[]>([
     { passenger_name: '', age: 0, gender: 'Male' }
   ]);
+  const [bookingClass, setBookingClass] = useState('AC 3-Tier');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -78,6 +79,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         train_id: train.train_id,
         travel_date: travelDate,
         passengers: passengers,
+        booking_class: bookingClass,
       };
 
       const response = await api.bookTicket(bookingRequest);
@@ -142,6 +144,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <span>Add Passenger</span>
                   </button>
                 )}
+              </div>
+
+              {/* Class Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Travel Class
+                </label>
+                <select
+                  value={bookingClass}
+                  onChange={(e) => setBookingClass(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="AC 1st Class">AC 1st Class - ₹2,500</option>
+                  <option value="AC 2-Tier">AC 2-Tier - ₹1,800</option>
+                  <option value="AC 3-Tier">AC 3-Tier - ₹1,200</option>
+                  <option value="Sleeper">Sleeper - ₹850</option>
+                  <option value="General">General - ₹400</option>
+                </select>
               </div>
 
               <div className="space-y-4">
@@ -219,6 +239,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
+                  <span>Travel Class:</span>
+                  <span>{bookingClass}</span>
+                </div>
+                <div className="flex justify-between">
                   <span>Base Fare (per passenger):</span>
                   <span>₹850</span>
                 </div>
@@ -226,6 +250,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   <span>Number of Passengers:</span>
                   <span>{passengers.length}</span>
                 </div>
+                {train.available_seats === 0 && (
+                  <div className="flex justify-between text-amber-600">
+                    <span>Status:</span>
+                    <span>Waiting List</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-lg border-t pt-2">
                   <span>Total Amount:</span>
                   <span>₹{totalAmount.toLocaleString()}</span>

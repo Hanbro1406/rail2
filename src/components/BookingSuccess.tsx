@@ -1,5 +1,7 @@
 import React from 'react';
-import { CheckCircle, Download, Share, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Download, Share, ArrowLeft, Image } from 'lucide-react';
+import { generateTicketPDF, generateTicketImage } from '../utils/pdfGenerator';
+import { api } from '../services/api';
 
 interface BookingSuccessProps {
   pnr: string;
@@ -7,6 +9,36 @@ interface BookingSuccessProps {
 }
 
 const BookingSuccess: React.FC<BookingSuccessProps> = ({ pnr, onViewChange }) => {
+  const handleDownloadPDF = async () => {
+    try {
+      // Get booking details
+      const bookings = await api.getUserBookings(1); // Mock user ID
+      const booking = bookings.find(b => b.pnr_number === pnr);
+      
+      if (booking) {
+        await generateTicketPDF(booking);
+      }
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      // Get booking details
+      const bookings = await api.getUserBookings(1); // Mock user ID
+      const booking = bookings.find(b => b.pnr_number === pnr);
+      
+      if (booking) {
+        await generateTicketImage(booking);
+      }
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      alert('Failed to generate image. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
@@ -31,9 +63,20 @@ const BookingSuccess: React.FC<BookingSuccessProps> = ({ pnr, onViewChange }) =>
         </div>
 
         <div className="space-y-3 mb-6">
-          <button className="w-full flex items-center justify-center space-x-2 bg-blue-100 text-blue-700 py-2 rounded-lg hover:bg-blue-200 transition-colors">
+          <button 
+            onClick={handleDownloadPDF}
+            className="w-full flex items-center justify-center space-x-2 bg-blue-100 text-blue-700 py-2 rounded-lg hover:bg-blue-200 transition-colors"
+          >
             <Download className="h-4 w-4" />
-            <span>Download Ticket</span>
+            <span>Download PDF Ticket</span>
+          </button>
+          
+          <button 
+            onClick={handleDownloadImage}
+            className="w-full flex items-center justify-center space-x-2 bg-purple-100 text-purple-700 py-2 rounded-lg hover:bg-purple-200 transition-colors"
+          >
+            <Image className="h-4 w-4" />
+            <span>Download Image Ticket</span>
           </button>
           
           <button className="w-full flex items-center justify-center space-x-2 bg-emerald-100 text-emerald-700 py-2 rounded-lg hover:bg-emerald-200 transition-colors">

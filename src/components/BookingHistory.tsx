@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, AlertCircle, X } from 'lucide-react';
+import { Calendar, MapPin, Users, AlertCircle, X, Download, Image, Clock } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Booking } from '../types';
 import LoadingSpinner from './LoadingSpinner';
+import { generateTicketPDF, generateTicketImage } from '../utils/pdfGenerator';
 
 interface BookingHistoryProps {
   onViewChange: (view: string) => void;
@@ -55,6 +56,24 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
       setError(err instanceof Error ? err.message : 'Failed to cancel ticket');
     } finally {
       setCancellingPnr(null);
+    }
+  };
+
+  const handleDownloadPDF = async (booking: Booking) => {
+    try {
+      await generateTicketPDF(booking);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  const handleDownloadImage = async (booking: Booking) => {
+    try {
+      await generateTicketImage(booking);
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      alert('Failed to generate image. Please try again.');
     }
   };
 
@@ -114,6 +133,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           booking.status === 'CONFIRMED'
                             ? 'bg-emerald-100 text-emerald-800'
+                            : booking.status === 'WAITING'
+                            ? 'bg-amber-100 text-amber-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
@@ -133,6 +154,14 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
                         <p className="font-medium">
                           {new Date(booking.travel_date).toLocaleDateString()}
                         </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Class</p>
+                        <p className="font-medium">{booking.booking_class || 'Sleeper'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total Amount</p>
+                        <p className="font-medium text-emerald-600">₹{booking.total_amount?.toLocaleString() || '0'}</p>
                       </div>
                     </div>
 
@@ -167,7 +196,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
                                 {passenger.passenger_name} ({passenger.age}y, {passenger.gender})
                               </span>
                               <span className="text-gray-500">
-                                Seat {passenger.seat_number}
+                                {booking.status === 'CONFIRMED' ? `Seat ${passenger.seat_number}` : 'Waiting List'}
                               </span>
                             </div>
                           ))}
@@ -176,12 +205,31 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
                     )}
                   </div>
 
-                  {booking.status === 'CONFIRMED' && (
-                    <div className="mt-4 lg:mt-0 lg:ml-6">
+                  <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col space-y-2">
+                    {/* Download Options */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleDownloadPDF(booking)}
+                        className="flex items-center space-x-1 bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition-colors"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>PDF</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownloadImage(booking)}
+                        className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm hover:bg-purple-200 transition-colors"
+                      >
+                        <Image className="h-3 w-3" />
+                        <span>Image</span>
+                      </button>
+                    </div>
+
+                    {/* Cancel Button */}
+                    {(booking.status === 'CONFIRMED' || booking.status === 'WAITING') && (
                       <button
                         onClick={() => handleCancelTicket(booking.pnr_number)}
                         disabled={cancellingPnr === booking.pnr_number}
-                        className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center justify-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {cancellingPnr === booking.pnr_number ? (
                           <LoadingSpinner size="sm" />
@@ -190,8 +238,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ onViewChange }) => {
                         )}
                         <span>Cancel Ticket</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

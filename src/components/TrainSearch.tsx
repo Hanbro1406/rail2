@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRightLeft, Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { Search, ArrowRightLeft, Calendar, MapPin, Users, Clock, Info } from 'lucide-react';
 import { api } from '../services/api';
 import { Station, Train, SearchParams } from '../types';
 import LoadingSpinner from './LoadingSpinner';
+import TrainDetailsModal from './TrainDetailsModal';
 
 interface TrainSearchProps {
   onBookingSelect: (train: Train, travelDate: string) => void;
@@ -19,6 +20,7 @@ const TrainSearch: React.FC<TrainSearchProps> = ({ onBookingSelect }) => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState('');
+  const [selectedTrainId, setSelectedTrainId] = useState<number | null>(null);
 
   useEffect(() => {
     loadStations();
@@ -245,15 +247,29 @@ const TrainSearch: React.FC<TrainSearchProps> = ({ onBookingSelect }) => {
                         <span className="font-semibold">{train.available_seats}</span>
                       </div>
                       <p className="text-xs text-gray-500">seats available</p>
+                      {train.waiting_list && train.waiting_list > 0 && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          WL: {train.waiting_list}
+                        </p>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() => onBookingSelect(train, searchParams.date)}
-                      disabled={!train.available_seats || train.available_seats === 0}
-                      className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {train.available_seats && train.available_seats > 0 ? 'Book Now' : 'Sold Out'}
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setSelectedTrainId(train.train_id)}
+                        className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-200 transition-colors flex items-center space-x-1"
+                      >
+                        <Info className="h-4 w-4" />
+                        <span>Details</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => onBookingSelect(train, searchParams.date)}
+                        className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors"
+                      >
+                        {train.available_seats && train.available_seats > 0 ? 'Book Now' : 'Join Waitlist'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -269,6 +285,17 @@ const TrainSearch: React.FC<TrainSearchProps> = ({ onBookingSelect }) => {
             </p>
           </div>
         )}
+
+        {/* Train Details Modal */}
+        <TrainDetailsModal
+          trainId={selectedTrainId || 0}
+          isOpen={selectedTrainId !== null}
+          onClose={() => setSelectedTrainId(null)}
+          onBookNow={(train) => {
+            setSelectedTrainId(null);
+            onBookingSelect(train, searchParams.date);
+          }}
+        />
       </div>
     </div>
   );
