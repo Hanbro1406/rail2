@@ -138,7 +138,7 @@ const TrainDetailsModal: React.FC<TrainDetailsModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Train Type:</span>
-                          <span className="font-medium">{train.train_type}</span>
+                          <span className="font-medium">{train.train_type || 'Express'}</span>
                         </div>
                       </div>
                     </div>
@@ -148,27 +148,55 @@ const TrainDetailsModal: React.FC<TrainDetailsModalProps> = ({
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-3">Available Classes</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white rounded-lg p-3 border">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">AC 1st Class</span>
-                          <span className="text-emerald-600 font-bold">₹2,500</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Available: 8</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 border">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">AC 2-Tier</span>
-                          <span className="text-emerald-600 font-bold">₹1,800</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Available: 15</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 border">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">AC 3-Tier</span>
-                          <span className="text-emerald-600 font-bold">₹1,200</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Available: 22</p>
-                      </div>
+                      {train.train_type === 'Rajdhani' || train.train_type === 'Shatabdi' ? (
+                        <>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">AC 1st Class</span>
+                              <span className="text-emerald-600 font-bold">₹2,500</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.1)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">AC 2-Tier</span>
+                              <span className="text-emerald-600 font-bold">₹1,800</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.3)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">AC 3-Tier</span>
+                              <span className="text-emerald-600 font-bold">₹1,200</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.6)}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">AC 3-Tier</span>
+                              <span className="text-emerald-600 font-bold">₹1,200</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.3)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Sleeper</span>
+                              <span className="text-emerald-600 font-bold">₹850</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.5)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">General</span>
+                              <span className="text-emerald-600 font-bold">₹400</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">Available: {Math.floor(train.available_seats! * 0.2)}</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 

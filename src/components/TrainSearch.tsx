@@ -235,7 +235,14 @@ const TrainSearch: React.FC<TrainSearchProps> = ({ onBookingSelect }) => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
-                        <span>Departure: 08:00 AM</span>
+                        <span>Departure: {train.departure_time}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Arrival: {train.arrival_time}</span>
+                      </div>
+                      <div className="text-sm text-blue-600">
+                        <span>{train.train_type}</span>
                       </div>
                     </div>
                   </div>

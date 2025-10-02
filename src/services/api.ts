@@ -1,16 +1,9 @@
 import { User, Train, Booking, SearchParams, BookingRequest, Station } from '../types';
+import { indianRailwayAPI, IRStation, IRTrain } from './railwayApi';
 
-// Mock data for demonstration
-const mockStations: Station[] = [
-  { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS' },
-  { station_id: 2, station_name: 'Mumbai Central', station_code: 'MMCT' },
-  { station_id: 3, station_name: 'Chennai Central', station_code: 'MAS' },
-  { station_id: 4, station_name: 'Kolkata', station_code: 'KOAA' },
-  { station_id: 5, station_name: 'Bangalore', station_code: 'SBC' },
-  { station_id: 6, station_name: 'Hyderabad', station_code: 'SC' },
-  { station_id: 7, station_name: 'Pune', station_code: 'PUNE' },
-  { station_id: 8, station_name: 'Ahmedabad', station_code: 'ADI' },
-];
+// Cache for stations and trains
+let cachedStations: Station[] = [];
+let cachedTrains: Train[] = [];
 
 const mockTrains: Train[] = [
   {
@@ -117,17 +110,193 @@ export const api = {
 
   // Station search
   async getStations(): Promise<Station[]> {
-    await delay(300);
-    return mockStations;
+    await delay(500);
+    
+    if (cachedStations.length > 0) {
+      return cachedStations;
+    }
+
+    try {
+      const irStations = await indianRailwayAPI.getAllStations();
+      cachedStations = irStations.map((station, index) => ({
+        station_id: index + 1,
+        station_name: station.station_name,
+        station_code: station.station_code,
+      }));
+      return cachedStations;
+    } catch (error) {
+      console.error('Error fetching stations from API:', error);
+      // Fallback to basic stations
+      cachedStations = [
+        { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS' },
+        { station_id: 2, station_name: 'Mumbai CST', station_code: 'CSMT' },
+        { station_id: 3, station_name: 'Chennai Central', station_code: 'MAS' },
+        { station_id: 4, station_name: 'Howrah Junction', station_code: 'HWH' },
+        { station_id: 5, station_name: 'Bangalore City', station_code: 'SBC' },
+        { station_id: 6, station_name: 'Secunderabad Junction', station_code: 'SC' },
+        { station_id: 7, station_name: 'Pune Junction', station_code: 'PUNE' },
+        { station_id: 8, station_name: 'Ahmedabad Junction', station_code: 'ADI' },
+      ];
+      return cachedStations;
+    }
   },
 
   // Train search
   async searchTrains(params: SearchParams): Promise<Train[]> {
-    await delay(1200);
-    // Filter trains based on search params
+    await delay(1500);
+    
+    try {
+      const irTrains = await indianRailwayAPI.searchTrains(params.from, params.to, params.date);
+      const stations = await this.getStations();
+      
+      const trains: Train[] = irTrains.map((irTrain, index) => {
+        const sourceStation = stations.find(s => s.station_code === irTrain.from_station_code);
+        const destStation = stations.find(s => s.station_code === irTrain.to_station_code);
+        
+        // Generate realistic availability based on train type
+        const totalSeats = this.getTotalSeats(irTrain.train_name);
+        const availableSeats = Math.floor(Math.random() * totalSeats * 0.7) + 10;
+        const waitingList = Math.floor(Math.random() * 50);
+        
+        return {
+          train_id: parseInt(irTrain.train_number),
+          train_name: irTrain.train_name,
+          source_station_id: sourceStation?.station_id || 1,
+          destination_station_id: destStation?.station_id || 2,
+          total_seats: totalSeats,
+          available_seats: availableSeats,
+          waiting_list: waitingList,
+          source_station: sourceStation,
+          destination_station: destStation,
+          departure_time: irTrain.departure_time,
+          arrival_time: irTrain.arrival_time,
+          duration: irTrain.travel_time,
+          train_type: this.getTrainType(irTrain.train_name),
+          stops: []
+        };
+      });
+      
+      return trains;
+    } catch (error) {
+      console.error('Error searching trains:', error);
+      // Fallback to mock data
+      return this.getMockTrains(params);
+    }
+  },
+
+  // Get train details
+  async getTrainDetails(trainId: number): Promise<Train | null> {
+    await delay(800);
+    
+    try {
+      const schedule = await indianRailwayAPI.getTrainSchedule(trainId.toString());
+      const stations = await this.getStations();
+      
+      if (schedule) {
+        const sourceStation = stations.find(s => s.station_code === schedule.stations[0]?.station_code);
+        const destStation = stations.find(s => s.station_code === schedule.stations[schedule.stations.length - 1]?.station_code);
+        
+        const totalSeats = this.getTotalSeats(schedule.train_name);
+        const availableSeats = Math.floor(Math.random() * totalSeats * 0.7) + 10;
+        const waitingList = Math.floor(Math.random() * 50);
+        
+        return {
+          train_id: trainId,
+          train_name: schedule.train_name,
+          source_station_id: sourceStation?.station_id || 1,
+          destination_station_id: destStation?.station_id || 2,
+          total_seats: totalSeats,
+          available_seats: availableSeats,
+          waiting_list: waitingList,
+          source_station: sourceStation,
+          destination_station: destStation,
+          departure_time: schedule.stations[0]?.departure_time || '08:00',
+          arrival_time: schedule.stations[schedule.stations.length - 1]?.arrival_time || '20:00',
+          duration: this.calculateDuration(schedule.stations[0]?.departure_time, schedule.stations[schedule.stations.length - 1]?.arrival_time),
+          train_type: this.getTrainType(schedule.train_name),
+          stops: schedule.stations.map(station => ({
+            station_id: stations.find(s => s.station_code === station.station_code)?.station_id || 1,
+            station_name: station.station_name,
+            station_code: station.station_code,
+            arrival_time: station.arrival_time,
+            departure_time: station.departure_time,
+            platform: Math.floor(Math.random() * 6) + 1 + '',
+            halt_duration: station.halt_time
+          }))
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching train details:', error);
+      return this.getMockTrainDetails(trainId);
+    }
+  },
+
+  // Helper methods
+  getTotalSeats(trainName: string): number {
+    if (trainName.toLowerCase().includes('rajdhani')) return 300;
+    if (trainName.toLowerCase().includes('shatabdi')) return 250;
+    if (trainName.toLowerCase().includes('duronto')) return 280;
+    if (trainName.toLowerCase().includes('express')) return 400;
+    if (trainName.toLowerCase().includes('superfast')) return 350;
+    return 200;
+  },
+
+  getTrainType(trainName: string): string {
+    if (trainName.toLowerCase().includes('rajdhani')) return 'Rajdhani';
+    if (trainName.toLowerCase().includes('shatabdi')) return 'Shatabdi';
+    if (trainName.toLowerCase().includes('duronto')) return 'Duronto';
+    if (trainName.toLowerCase().includes('superfast')) return 'Superfast';
+    if (trainName.toLowerCase().includes('express')) return 'Express';
+    return 'Passenger';
+  },
+
+  calculateDuration(departure: string, arrival: string): string {
+    // Simple duration calculation - in real app, this would be more sophisticated
+    return '12h 30m';
+  },
+
+  getMockTrains(params: SearchParams): Train[] {
+    // Fallback mock data
+    const mockTrains: Train[] = [
+      {
+        train_id: 12301,
+        train_name: 'Howrah Rajdhani Express',
+        source_station_id: 1,
+        destination_station_id: 4,
+        total_seats: 300,
+        available_seats: 45,
+        waiting_list: 12,
+        source_station: { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS' },
+        destination_station: { station_id: 4, station_name: 'Howrah Junction', station_code: 'HWH' },
+        departure_time: '16:55',
+        arrival_time: '09:55+1',
+        duration: '17h 00m',
+        train_type: 'Rajdhani',
+        stops: []
+      },
+      {
+        train_id: 12002,
+        train_name: 'New Delhi Shatabdi Express',
+        source_station_id: 1,
+        destination_station_id: 7,
+        total_seats: 250,
+        available_seats: 82,
+        waiting_list: 5,
+        source_station: { station_id: 1, station_name: 'New Delhi', station_code: 'NDLS' },
+        destination_station: { station_id: 7, station_name: 'Pune Junction', station_code: 'PUNE' },
+        departure_time: '06:00',
+        arrival_time: '14:05',
+        duration: '8h 05m',
+        train_type: 'Shatabdi',
+        stops: []
+      }
+    ];
+    
     return mockTrains.filter(train => {
-      const fromStation = mockStations.find(s => s.station_code === params.from);
-      const toStation = mockStations.find(s => s.station_code === params.to);
+      const fromStation = cachedStations.find(s => s.station_code === params.from);
+      const toStation = cachedStations.find(s => s.station_code === params.to);
       return (
         train.source_station_id === fromStation?.station_id &&
         train.destination_station_id === toStation?.station_id
@@ -135,10 +304,10 @@ export const api = {
     });
   },
 
-  // Get train details
-  async getTrainDetails(trainId: number): Promise<Train | null> {
-    await delay(500);
+  getMockTrainDetails(trainId: number): Train | null {
+    const mockTrains = this.getMockTrains({ from: 'NDLS', to: 'HWH', date: '' });
     return mockTrains.find(train => train.train_id === trainId) || null;
+  },
   },
 
   // Booking

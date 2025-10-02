@@ -166,11 +166,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   onChange={(e) => setBookingClass(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="AC 1st Class">AC 1st Class - ₹2,500</option>
-                  <option value="AC 2-Tier">AC 2-Tier - ₹1,800</option>
-                  <option value="AC 3-Tier">AC 3-Tier - ₹1,200</option>
-                  <option value="Sleeper">Sleeper - ₹850</option>
-                  <option value="General">General - ₹400</option>
+                  {train.train_type === 'Rajdhani' || train.train_type === 'Shatabdi' ? (
+                    <>
+                      <option value="AC 1st Class">AC 1st Class - ₹2,500</option>
+                      <option value="AC 2-Tier">AC 2-Tier - ₹1,800</option>
+                      <option value="AC 3-Tier">AC 3-Tier - ₹1,200</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="AC 3-Tier">AC 3-Tier - ₹1,200</option>
+                      <option value="Sleeper">Sleeper - ₹850</option>
+                      <option value="General">General - ₹400</option>
+                    </>
+                  )}
                 </select>
               </div>
 
