@@ -146,6 +146,17 @@ export const api = {
     await delay(1500);
     const pnr = 'PNR' + Math.random().toString(36).substr(2, 6).toUpperCase();
     
+    // Pricing for different classes
+    const classPricing = {
+      'AC 1st Class': 2500,
+      'AC 2-Tier': 1800,
+      'AC 3-Tier': 1200,
+      'Sleeper': 850,
+      'General': 400,
+    };
+    
+    const basePrice = classPricing[bookingData.booking_class as keyof typeof classPricing] || 850;
+    
     // Determine booking status based on availability
     const train = mockTrains.find(t => t.train_id === bookingData.train_id);
     const status = train && train.available_seats && train.available_seats >= bookingData.passengers.length 
@@ -162,7 +173,7 @@ export const api = {
       travel_date: bookingData.travel_date,
       status: status,
       train: train,
-      total_amount: bookingData.passengers.length * 850,
+      total_amount: bookingData.passengers.length * basePrice,
       booking_class: bookingData.booking_class || 'Sleeper',
       passengers: bookingData.passengers.map((p, index) => ({
         ...p,

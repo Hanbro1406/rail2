@@ -26,6 +26,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Pricing for different classes
+  const classPricing = {
+    'AC 1st Class': 2500,
+    'AC 2-Tier': 1800,
+    'AC 3-Tier': 1200,
+    'Sleeper': 850,
+    'General': 400,
+  };
+
   const addPassenger = () => {
     if (passengers.length < 6) {
       setPassengers(prev => [...prev, { passenger_name: '', age: 0, gender: 'Male' }]);
@@ -91,7 +100,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   };
 
-  const totalAmount = passengers.length * 850; // Mock pricing
+  const basePrice = classPricing[bookingClass as keyof typeof classPricing] || 850;
+  const totalAmount = passengers.length * basePrice;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -244,7 +254,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span>Base Fare (per passenger):</span>
-                  <span>₹850</span>
+                  <span>₹{basePrice.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Number of Passengers:</span>
