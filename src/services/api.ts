@@ -308,7 +308,6 @@ export const api = {
     const mockTrains = this.getMockTrains({ from: 'NDLS', to: 'HWH', date: '' });
     return mockTrains.find(train => train.train_id === trainId) || null;
   },
-  },
 
   // Booking
   async bookTicket(bookingData: BookingRequest): Promise<{ message: string; pnr_number: string }> {
